@@ -336,6 +336,6 @@ class FaceAlignment:
                     landmarks[new_uuid]['landmarks'] = pts_img.numpy()
             else:
                 print("Warning: No faces were detected.")
-                return None
+                return {}
 
             return landmarks

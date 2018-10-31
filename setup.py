@@ -17,12 +17,14 @@ requirements = [
     'opencv-python',
     'scikit-image',
     'uuid',
-    'enum34;python_version<"3.4"'
+    'enum34;python_version<"3.4"',
+    'torchvision'
+    'PIL',
 ]
 
 setup(
     name='face_alignment',
-    version='0.1.1',
+    version='0.1.2',
 
     description="Detector 2D or 3D face landmarks from Python",
     long_description=long_description,

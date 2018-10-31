@@ -345,6 +345,7 @@ class FaceAlignment:
                     if i > 0 and not all_faces:
                         break
                     new_uuid = uuid.uuid4().hex
+                    rect = d
                     if self.use_cnn_face_detector:
                         d = d.rect
 
@@ -392,7 +393,7 @@ class FaceAlignment:
                     landmarks[new_uuid] = {}
                     landmarks[new_uuid]['rectangle'] = d
                     landmarks[new_uuid]['landmarks'] = pts_img.numpy()
-                    landmarks[new_uuid]['confidence'] = d.confidence
+                    landmarks[new_uuid]['confidence'] = rect.confidence
                     landmarks[new_uuid]['pose'] = pose
             else:
                 print("Warning: No faces were detected.")

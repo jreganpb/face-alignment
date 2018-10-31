@@ -18,7 +18,7 @@ requirements = [
     'scikit-image',
     'uuid',
     'enum34;python_version<"3.4"',
-    'torchvision'
+    'torchvision',
     'PIL',
 ]
 

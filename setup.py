@@ -31,7 +31,7 @@ setup(
     # Author details
     author="Adrian Bulat",
     author_email="adrian.bulat@nottingham.ac.uk",
-    url="https://github.com/1adrianb/face-alignment",
+    url="https://github.com/jregan/face-alignment",
 
     # Package info
     packages=find_packages(exclude=('test',)),

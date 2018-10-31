@@ -18,7 +18,8 @@ except BaseException:
 
 from .models import FAN, ResNetDepth
 from .utils import *
-from pose import datasets, hopenet, utils
+#from pose import datasets, hopenet, utils
+from pose.hopenet import Hopenet
 from PIL import Image
 from torch.autograd import Variable
 import torch.nn.functional as F
@@ -69,7 +70,7 @@ class FaceAlignment:
         self.use_cnn_face_detector = use_cnn_face_detector
         self.flip_input = flip_input
         self.landmarks_type = landmarks_type
-        self.pose_model = hopenet.Hopenet(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 66)
+        self.pose_model = Hopenet(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 66)
         if enable_cuda:
             self.pose_model.cuda(0)
         self.pose_model.eval()

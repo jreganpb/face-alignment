@@ -19,7 +19,7 @@ except BaseException:
 from .models import FAN, ResNetDepth
 from .utils import *
 #from pose import datasets, hopenet, utils
-from pose.hopenet import Hopenet
+from .pose.hopenet import Hopenet
 from PIL import Image
 from torch.autograd import Variable
 import torch.nn.functional as F

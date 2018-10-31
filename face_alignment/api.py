@@ -9,6 +9,8 @@ from skimage import io
 from skimage import color
 import cv2
 import uuid
+import torchvision
+from torchvision import transforms
 try:
     import urllib.request as request_file
 except BaseException:
@@ -16,6 +18,10 @@ except BaseException:
 
 from .models import FAN, ResNetDepth
 from .utils import *
+from pose import datasets, hopenet, utils
+from PIL import Image
+from torch.autograd import Variable
+import torch.nn.functional as F
 
 
 class LandmarksType(Enum):
@@ -63,6 +69,10 @@ class FaceAlignment:
         self.use_cnn_face_detector = use_cnn_face_detector
         self.flip_input = flip_input
         self.landmarks_type = landmarks_type
+        self.pose_model = hopenet.Hopenet(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 66)
+        if enable_cuda:
+            self.pose_model.cuda(0)
+        self.pose_model.eval()
         base_path = os.path.join(appdata_dir('face_alignment'), "data")
 
         if not os.path.exists(base_path):
@@ -267,6 +277,51 @@ class FaceAlignment:
             except Exception as e:
                 print(e)
 
+    def get_default_bounding_box(self,input_image,det):
+        x_min = det.rect.left()
+        y_min = det.rect.top()
+        x_max = det.rect.right()
+        y_max = det.rect.bottom()
+        bbox_width = abs(x_max - x_min)
+        bbox_height = abs(y_max - y_min)
+        x_min -= 2 * bbox_width / 4
+        x_max += 2 * bbox_width / 4
+        y_min -= 3 * bbox_height / 4
+        y_max += bbox_height / 4
+        x_min = max(x_min, 0)
+        y_min = max(y_min, 0)
+        x_max = min(input_image.shape[1], x_max)
+        y_max = min(input_image.shape[0], y_max)
+        x_min = int(np.round(x_min)); x_max = int(np.round(x_max))
+        y_min = int(np.round(y_min)); y_max = int(np.round(y_max))
+        return x_min, x_max, y_min, y_max
+
+    def get_head_pose(self, input_image):
+        idx_tensor = [idx for idx in range(66)]
+        idx_tensor = torch.FloatTensor(idx_tensor)
+        if self.enable_cuda:
+            idx_tensor = idx_tensor.cuda(0)
+        img = Image.fromarray(input_image)
+        transformations = transforms.Compose([transforms.Scale(224),
+                                              transforms.CenterCrop(224), transforms.ToTensor(),
+                                              transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                                   std=[0.229, 0.224, 0.225])])
+        img = transformations(img)
+        img_shape = img.size()
+        img = img.view(1, img_shape[0], img_shape[1], img_shape[2])
+        img = Variable(img)
+        if self.enable_cuda:
+            img = img.cuda(0)
+        yaw, pitch, roll = self.pose_model(img)
+        yaw_predicted = F.softmax(yaw)
+        pitch_predicted = F.softmax(pitch)
+        roll_predicted = F.softmax(roll)
+        # Get continuous predictions in degrees.
+        yaw_predicted = torch.sum(yaw_predicted.data[0] * idx_tensor) * 3 - 99
+        pitch_predicted = torch.sum(pitch_predicted.data[0] * idx_tensor) * 3 - 99
+        roll_predicted = torch.sum(roll_predicted.data[0] * idx_tensor) * 3 - 99
+        return {'yaw' : yaw_predicted, 'pitch' : pitch_predicted, 'roll' : roll_predicted}
+
     def get_landmarks_with_rectangles(self, input_image, all_faces=False): ## Returns dictionary w/ uuid's pre-made
         with torch.no_grad():
             if isinstance(input_image, str):
@@ -330,10 +385,15 @@ class FaceAlignment:
                         pts_img = torch.cat(
                             (pts_img, depth_pred * (1.0 / (256.0 / (200.0 * scale)))), 1)
 
+                    x_min, x_max, y_min, y_max = self.get_default_bounding_box(image,d)
+                    pose = self.get_head_pose(input_image=image[y_min:y_max,x_min:x_max])
+
                     #landmarks.append(pts_img.numpy())
                     landmarks[new_uuid] = {}
                     landmarks[new_uuid]['rectangle'] = d
                     landmarks[new_uuid]['landmarks'] = pts_img.numpy()
+                    landmarks[new_uuid]['confidence'] = d.confidence
+                    landmarks[new_uuid]['pose'] = pose
             else:
                 print("Warning: No faces were detected.")
                 return {}

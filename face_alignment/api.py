@@ -278,10 +278,10 @@ class FaceAlignment:
                 print(e)
 
     def get_default_bounding_box(self,input_image,det):
-        x_min = det.rect.left()
-        y_min = det.rect.top()
-        x_max = det.rect.right()
-        y_max = det.rect.bottom()
+        x_min = det.left()
+        y_min = det.top()
+        x_max = det.right()
+        y_max = det.bottom()
         bbox_width = abs(x_max - x_min)
         bbox_height = abs(y_max - y_min)
         x_min -= 2 * bbox_width / 4

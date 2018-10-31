@@ -288,7 +288,7 @@ class FaceAlignment:
         x_min -= bbox_width / 4
         x_max += bbox_width / 4
         y_min -= bbox_height / 4
-        y_max += bbox_height / 4
+        y_max += 3 * bbox_height / 4
         x_min = max(x_min, 0)
         y_min = max(y_min, 0)
         x_max = min(input_image.shape[1], x_max)
